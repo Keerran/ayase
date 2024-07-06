@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "psycopg2>=2.9.9",
     "discord.py>=2.4.0",
+    "pillow>=10.4.0",
 ]
 
 [tool.setuptools.packages.find]

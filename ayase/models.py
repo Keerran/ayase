@@ -49,3 +49,11 @@ class Edition(Base):
     character: Mapped[Character] = relationship()
 
     __table_args__ = (UniqueConstraint("character_id", "num"),)
+
+
+class Card(Base):
+    __tablename__ = "cards"
+
+    card_id: Mapped[int] = mapped_column(primary_key=True)
+    edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
+    user_id: Mapped[int] = mapped_column(Integer())
