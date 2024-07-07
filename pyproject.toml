@@ -15,5 +15,13 @@ dependencies = [
     "pillow>=10.4.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.7.1"
+]
+
 [tool.setuptools.packages.find]
 include = ["main.py"]
+
+[tool.autopep8]
+ignore = "E501"
