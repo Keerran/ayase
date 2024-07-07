@@ -1,5 +1,10 @@
 import io
 from PIL import Image
+from typing import TypeVar
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import Session, DeclarativeBase
+
+T = TypeVar("T", bound=DeclarativeBase)
 
 
 def merge(im1: Image, im2: Image):
@@ -18,3 +23,15 @@ def img_to_buf(img: Image, format="PNG"):
     img.save(buf, format=format)
     buf.seek(0)
     return buf
+
+
+def get_or_create(session: Session, model: type[T], index: dict, defaults: dict = None) -> T:
+    try:
+        return session.query(model).filter_by(**index).one()
+    except NoResultFound:
+        if defaults is not None:
+            index.update(defaults)
+        item = model(**index)
+        session.add(item)
+        session.commit()
+        return item

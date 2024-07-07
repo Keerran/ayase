@@ -1,6 +1,7 @@
-from sqlalchemy import String, Integer, ForeignKey, MetaData
+from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
+from datetime import datetime
 
 
 class Base(DeclarativeBase):
@@ -56,4 +57,14 @@ class Card(Base):
 
     card_id: Mapped[int] = mapped_column(primary_key=True)
     edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
-    user_id: Mapped[int] = mapped_column(Integer())
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+    edition: Mapped[Edition] = relationship()
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
+    last_drop: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
+    last_grab: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
