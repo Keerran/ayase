@@ -1,7 +1,11 @@
+import string
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
+from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
+
+digits = string.digits + string.ascii_lowercase
 
 
 class Base(DeclarativeBase):
@@ -55,11 +59,31 @@ class Edition(Base):
 class Card(Base):
     __tablename__ = "cards"
 
-    card_id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
 
     edition: Mapped[Edition] = relationship()
+
+    @property
+    def character(self) -> Character:
+        return self.edition.character
+
+    @property
+    def slug(self) -> str:
+        n = self.id
+        base = len(digits)
+        if n == 0:
+            return "0"
+        result = ""
+        while n:
+            n, r = divmod(n, base)
+            result += digits[r]
+        return result.zfill(6)
+
+    def display(self) -> str:
+        return f"`{self.slug}` {self.character.name}"
 
 
 class User(Base):

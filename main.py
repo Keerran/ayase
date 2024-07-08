@@ -1,9 +1,10 @@
 import os
 import discord
 import functools as ft
+from os import path
 from datetime import datetime
 from ayase.utils import merge, img_to_buf, get_or_create
-from ayase.models import Edition, Card, User
+from ayase.models import digits, Edition, Card, User
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Engine, select
 from sqlalchemy.orm import Session
@@ -94,9 +95,24 @@ async def collection(ctx: commands.Context):
     session = Session(bot.engine)
     query = select(Card).where(Card.user_id == ctx.author.id)
     cards = session.scalars(query)
-    embed = discord.Embed()
-    embed.add_field(name="Collection", value="\n".join([card.edition.character.name for card in cards]))
+    embed = discord.Embed(title="Collection")
+    embed.add_field(name="", value="\n".join([card.display() for card in cards]))
     await ctx.send(embed=embed)
+
+
+@bot.hybrid_command(aliases=["v"])
+async def view(ctx: commands.Context, slug: str):
+    try:
+        id = int(slug, len(digits))
+    except ValueError:
+        await ctx.send(f"`{slug}` is not a valid card id.")
+        return
+    session = Session(bot.engine)
+    card = session.get(Card, id)
+    embed = discord.Embed(title="Card Details")
+    embed.add_field(name="", value=card.display())
+    embed.set_image(url=f"attachment://{slug}.png")
+    await ctx.send(embed=embed, file=discord.File(card.edition.image, f"{slug}.png"))
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
