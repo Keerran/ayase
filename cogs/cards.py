@@ -5,7 +5,7 @@ from discord.ext import commands
 from ayase.bot import Bot
 from ayase.models import Edition, User, Card, digits
 from ayase.utils import merge, img_to_buf, get_or_create
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from PIL import Image
@@ -48,6 +48,14 @@ class Cards(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.engine = bot.engine
+
+    @commands.is_owner()
+    @commands.hybrid_command(aliases=["!rcd"])
+    async def refresh_cooldowns(self, ctx: commands.Context):
+        with Session(self.engine) as session:
+            session.execute(update(User).values(last_drop=None, last_grab=None))
+            session.commit()
+        ctx.send("🔃 Cooldowns reset!")
 
     @commands.hybrid_command(aliases=["d"])
     async def drop(self, ctx: commands.Context):
