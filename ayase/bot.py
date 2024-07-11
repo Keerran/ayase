@@ -4,9 +4,9 @@ from discord.ext import commands
 from sqlalchemy import create_engine
 
 extensions = [
-    "cogs.admin",
-    "cogs.cards",
-    "cogs.misc",
+    "ayase.cogs.admin",
+    "ayase.cogs.cards",
+    "ayase.cogs.misc",
 ]
 
 

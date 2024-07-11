@@ -20,8 +20,11 @@ dev = [
     "pre-commit>=3.7.1"
 ]
 
-[tool.setuptools.packages.find]
-include = ["main.py"]
+[project.scripts]
+ayase = "ayase.cli:main"
+
+[tool.setuptools]
+packages = ["ayase"]
 
 [tool.autopep8]
 ignore = "E501"
