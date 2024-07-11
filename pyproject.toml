@@ -22,7 +22,7 @@ dev = [
 ]
 
 [project.scripts]
-ayase = "ayase.cli:main"
+ayase = "ayase.cli:cli"
 
 [tool.setuptools]
 packages = ["ayase"]
