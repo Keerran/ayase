@@ -56,15 +56,25 @@ class Edition(Base):
     __table_args__ = (UniqueConstraint("character_id", "num"),)
 
 
+class Frame(Base):
+    __tablename__ = "frames"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(), unique=True)
+    image: Mapped[str] = mapped_column(String(), unique=True)
+
+
 class Card(Base):
     __tablename__ = "cards"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    frame_id: Mapped[int] = mapped_column(ForeignKey("frames.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
 
     edition: Mapped[Edition] = relationship()
+    frame: Mapped[Frame] = relationship()
 
     @property
     def character(self) -> Character:
