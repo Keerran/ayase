@@ -1,4 +1,5 @@
 import string
+from PIL import Image
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -75,6 +76,16 @@ class Card(Base):
 
     edition: Mapped[Edition] = relationship()
     frame: Mapped[Frame] = relationship()
+
+    @property
+    def image(self) -> Image:
+        frame_image = self.frame.image if self.frame else f"frames/ed{self.edition.num}.png"
+        frame = Image.open(frame_image)
+        char = Image.open(self.edition.image)
+        img = Image.new("RGBA", frame.size)
+        img.paste(char, (27, 86))
+        img.paste(frame, (0, 0), mask=frame)
+        return img
 
     @property
     def character(self) -> Character:

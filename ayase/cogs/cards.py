@@ -8,7 +8,6 @@ from ayase.utils import merge, img_to_buf, get_or_create
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
-from PIL import Image
 
 drops: dict[int, tuple[Edition]] = {}
 
@@ -70,7 +69,7 @@ class Cards(commands.Cog):
         session.commit()
         query = select(Edition).order_by(func.random()).limit(3)
         chars = tuple(session.scalars(query))
-        images = [Image.open(char.image) for char in chars]
+        images = [Card(edition_id=char.id, edition=char).image for char in chars]
         choices = img_to_buf(ft.reduce(merge, images))
 
         message = await ctx.send(file=discord.File(choices, "drop.png"), view=Drop(self.engine))
@@ -97,7 +96,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(title="Card Details")
         embed.add_field(name="", value=card.display())
         embed.set_image(url=f"attachment://{slug}.png")
-        await ctx.send(embed=embed, file=discord.File(card.edition.image, f"{slug}.png"))
+        await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{slug}.png"))
 
 
 async def setup(bot: Bot):
