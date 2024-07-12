@@ -112,8 +112,7 @@ class Card(Base):
             id = int(slug, len(digits))
         except ValueError:
             raise commands.BadArgument()
-        session = Session(ctx.engine)
-        card = session.get(Card, id)
+        card = ctx.session.get(Card, id)
         if card is None:
             raise commands.BadArgument()
         return card

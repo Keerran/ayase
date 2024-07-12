@@ -3,7 +3,7 @@ import functools as ft
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
-from ayase.models import Edition, User, Card, digits
+from ayase.models import Edition, User, Card
 from ayase.utils import merge, img_to_buf, get_or_create
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session
@@ -51,24 +51,23 @@ class Cards(commands.Cog):
     @commands.is_owner()
     @commands.hybrid_command(aliases=["!rcd"])
     async def refresh_cooldowns(self, ctx: Context):
-        with Session(self.engine) as session:
+        with ctx.session as session:
             session.execute(update(User).values(last_drop=None, last_grab=None))
             session.commit()
         await ctx.send("🔃 Cooldowns reset!")
 
     @commands.hybrid_command(aliases=["d"])
     async def drop(self, ctx: Context):
-        session = Session(self.engine)
-        user = get_or_create(session, User, {"id": ctx.author.id})
+        user = get_or_create(ctx.session, User, {"id": ctx.author.id})
         if user.last_drop:
             time = 1800 - (datetime.now() - user.last_drop).seconds
             if time > 0:
                 await ctx.send(f"You must wait `{time // 60}m` before dropping again.")
                 return
         user.last_drop = datetime.now()
-        session.commit()
+        ctx.session.commit()
         query = select(Edition).order_by(func.random()).limit(3)
-        chars = tuple(session.scalars(query))
+        chars = tuple(ctx.session.scalars(query))
         images = [Card(edition_id=char.id, edition=char).image for char in chars]
         choices = img_to_buf(ft.reduce(merge, images))
 
@@ -77,9 +76,8 @@ class Cards(commands.Cog):
 
     @commands.hybrid_command(aliases=["c"])
     async def collection(self, ctx: Context):
-        session = Session(self.engine)
         query = select(Card).where(Card.user_id == ctx.author.id)
-        cards = session.scalars(query)
+        cards = ctx.session.scalars(query)
         embed = discord.Embed(title="Collection")
         embed.add_field(name="", value="\n".join([card.display() for card in cards]))
         await ctx.send(embed=embed)

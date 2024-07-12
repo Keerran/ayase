@@ -3,6 +3,7 @@ import os
 import discord
 from discord.ext import commands
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 extensions = [
     "ayase.cogs.admin",
@@ -17,6 +18,7 @@ class Context(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.engine = self.bot.engine
+        self.session = Session(self.engine)
 
 
 class Bot(commands.Bot):
