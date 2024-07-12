@@ -2,7 +2,7 @@ import discord
 import functools as ft
 from datetime import datetime
 from discord.ext import commands
-from ayase.bot import Bot
+from ayase.bot import Bot, Context
 from ayase.models import Edition, User, Card, digits
 from ayase.utils import merge, img_to_buf, get_or_create
 from sqlalchemy import Engine, select, update
@@ -50,14 +50,14 @@ class Cards(commands.Cog):
 
     @commands.is_owner()
     @commands.hybrid_command(aliases=["!rcd"])
-    async def refresh_cooldowns(self, ctx: commands.Context):
+    async def refresh_cooldowns(self, ctx: Context):
         with Session(self.engine) as session:
             session.execute(update(User).values(last_drop=None, last_grab=None))
             session.commit()
         await ctx.send("🔃 Cooldowns reset!")
 
     @commands.hybrid_command(aliases=["d"])
-    async def drop(self, ctx: commands.Context):
+    async def drop(self, ctx: Context):
         session = Session(self.engine)
         user = get_or_create(session, User, {"id": ctx.author.id})
         if user.last_drop:
@@ -76,7 +76,7 @@ class Cards(commands.Cog):
         drops[message.id] = chars
 
     @commands.hybrid_command(aliases=["c"])
-    async def collection(self, ctx: commands.Context):
+    async def collection(self, ctx: Context):
         session = Session(self.engine)
         query = select(Card).where(Card.user_id == ctx.author.id)
         cards = session.scalars(query)
@@ -85,18 +85,11 @@ class Cards(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(aliases=["v"])
-    async def view(self, ctx: commands.Context, slug: str):
-        try:
-            id = int(slug, len(digits))
-        except ValueError:
-            await ctx.send(f"`{slug}` is not a valid card id.")
-            return
-        session = Session(self.engine)
-        card = session.get(Card, id)
+    async def view(self, ctx: Context, card: Card):
         embed = discord.Embed(title="Card Details")
         embed.add_field(name="", value=card.display())
-        embed.set_image(url=f"attachment://{slug}.png")
-        await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{slug}.png"))
+        embed.set_image(url=f"attachment://{card.id}.png")
+        await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
 
 
 async def setup(bot: Bot):

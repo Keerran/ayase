@@ -1,8 +1,11 @@
+from __future__ import annotations
 import string
+from discord.ext import commands
 from PIL import Image
+from ayase.bot import Context
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
 
@@ -102,6 +105,18 @@ class Card(Base):
             n, r = divmod(n, base)
             result += digits[r]
         return result.zfill(6)
+
+    @classmethod
+    async def convert(cls: type, ctx: Context, slug: str) -> Card:
+        try:
+            id = int(slug, len(digits))
+        except ValueError:
+            raise commands.BadArgument()
+        session = Session(ctx.engine)
+        card = session.get(Card, id)
+        if card is None:
+            raise commands.BadArgument()
+        return card
 
     def display(self) -> str:
         return f"`{self.slug}` {self.character.name}"

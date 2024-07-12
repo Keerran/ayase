@@ -1,5 +1,5 @@
 from discord.ext import commands
-from ayase.bot import Bot
+from ayase.bot import Bot, Context
 
 
 class Misc(commands.Cog):
@@ -7,7 +7,7 @@ class Misc(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command()
-    async def ping(self, ctx: commands.Context):
+    async def ping(self, ctx: Context):
         await ctx.send("Pong!")
 
 

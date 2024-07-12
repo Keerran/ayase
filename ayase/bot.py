@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import discord
 from discord.ext import commands
@@ -8,6 +9,14 @@ extensions = [
     "ayase.cogs.cards",
     "ayase.cogs.misc",
 ]
+
+
+class Context(commands.Context):
+    bot: Bot
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.engine = self.bot.engine
 
 
 class Bot(commands.Bot):
@@ -22,3 +31,6 @@ class Bot(commands.Bot):
         self.owner_id = self.bot_info.owner.id
         for ext in extensions:
             await self.load_extension(ext)
+
+    async def get_context(self, message, *, cls=Context):
+        return await super().get_context(message, cls=cls)
