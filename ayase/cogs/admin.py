@@ -13,7 +13,7 @@ class Admin(commands.Cog):
     @commands.hybrid_command(aliases=["!r"])
     async def reload(self, ctx: commands.Context, cog: str):
         await self.bot.reload_extension(cog)
-        ctx.send(f"🔃 {cog} reloaded!")
+        await ctx.send(f"🔃 {cog} reloaded!")
 
 
 async def setup(bot: Bot):

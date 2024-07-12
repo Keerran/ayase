@@ -55,7 +55,7 @@ class Cards(commands.Cog):
         with Session(self.engine) as session:
             session.execute(update(User).values(last_drop=None, last_grab=None))
             session.commit()
-        ctx.send("🔃 Cooldowns reset!")
+        await ctx.send("🔃 Cooldowns reset!")
 
     @commands.hybrid_command(aliases=["d"])
     async def drop(self, ctx: commands.Context):
