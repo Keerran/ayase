@@ -18,6 +18,8 @@ async def run_bot():
 
 
 def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
+    if not file:
+        return
     load_dotenv()
     frames = json.load(file)
     engine = create_engine(os.getenv("DATABASE_URL"))
@@ -32,7 +34,7 @@ def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.option("-f", "--frames", type=click.File("r"), callback=import_frames, is_eager=True, expose_value=True)
+@click.option("-f", "--frames", type=click.File("r"), callback=import_frames, is_eager=True, expose_value=False)
 def cli():
     discord.utils.setup_logging()
     asyncio.run(run_bot())
