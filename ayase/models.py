@@ -1,5 +1,6 @@
 from __future__ import annotations
 import string
+from os import path
 from discord.ext import commands
 from PIL import Image
 from ayase.bot import Context
@@ -83,10 +84,14 @@ class Card(Base):
     @property
     def image(self) -> Image:
         frame_image = self.frame.image if self.frame else f"frames/ed{self.edition.num}.png"
+        mask_image = frame_image.replace(".png", "mask.png")
+        mask = Image.open(mask_image) if path.isfile(mask_image) else None
         frame = Image.open(frame_image)
         char = Image.open(self.edition.image)
+        if mask:
+            mask = mask.crop((27, 86, 27 + char.size[0], 86 + char.size[1]))
         img = Image.new("RGBA", frame.size)
-        img.paste(char, (27, 86))
+        img.paste(char, (27, 86), mask=mask)
         img.paste(frame, (0, 0), mask=frame)
         return img
 
