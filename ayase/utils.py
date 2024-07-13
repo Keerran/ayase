@@ -1,6 +1,8 @@
 import io
 from PIL import Image
 from typing import TypeVar
+from discord.ext import commands
+from ayase.models import Card
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session, DeclarativeBase
 
@@ -35,3 +37,8 @@ def get_or_create(session: Session, model: type[T], index: dict, defaults: dict 
         session.add(item)
         session.commit()
         return item
+
+
+def check_owns_card(card: Card, user_id: int):
+    if card.user_id != user_id:
+        raise commands.BadArgument()

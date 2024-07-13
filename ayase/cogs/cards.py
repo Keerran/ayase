@@ -4,7 +4,7 @@ from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
 from ayase.models import Edition, User, Card, Frame
-from ayase.utils import merge, img_to_buf, get_or_create
+from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
@@ -91,6 +91,7 @@ class Cards(commands.Cog):
 
     @commands.hybrid_command(aliases=["f"])
     async def frame(self, ctx: Context, card: Card, frame_name: str):
+        check_owns_card(card, ctx.author.id)
         with ctx.session as session:
             stmt = select(Frame).where(Frame.name == frame_name)
             card.frame = session.scalar(stmt)

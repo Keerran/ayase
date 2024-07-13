@@ -6,7 +6,7 @@ from PIL import Image
 from ayase.bot import Context
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
 
