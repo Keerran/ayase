@@ -23,7 +23,7 @@ pip install .[dev]
 Once installed you must provide a `.env` file in the format shown in `.env.example`.
 Then you can simply run:
 ```bash
-python main.py
+ayase
 ```
 
 ## Features
