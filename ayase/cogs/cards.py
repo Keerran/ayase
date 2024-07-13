@@ -3,7 +3,7 @@ import functools as ft
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
-from ayase.models import Edition, User, Card
+from ayase.models import Edition, User, Card, Frame
 from ayase.utils import merge, img_to_buf, get_or_create
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session
@@ -88,6 +88,13 @@ class Cards(commands.Cog):
         embed.add_field(name="", value=card.display())
         embed.set_image(url=f"attachment://{card.id}.png")
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
+
+    @commands.hybrid_command(aliases=["f"])
+    async def frame(self, ctx: Context, card: Card, frame_name: str):
+        with ctx.session as session:
+            stmt = select(Frame).where(Frame.name == frame_name)
+            card.frame = session.scalar(stmt)
+            session.commit()
 
 
 async def setup(bot: Bot):
