@@ -86,8 +86,8 @@ class Card(Base):
         frame_image = self.frame.image if self.frame else f"frames/ed{self.edition.num}.png"
         mask_image = frame_image.replace(".png", "mask.png")
         mask = Image.open(mask_image) if path.isfile(mask_image) else None
-        frame = Image.open(frame_image)
-        char = Image.open(self.edition.image)
+        frame = Image.open(frame_image).convert("RGBA")
+        char = Image.open(self.edition.image).convert("RGBA")
         if mask:
             mask = mask.crop((27, 86, 27 + char.size[0], 86 + char.size[1]))
         img = Image.new("RGBA", frame.size)
