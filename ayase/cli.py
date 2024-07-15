@@ -6,6 +6,7 @@ import click
 from typing import TextIO
 from ayase.bot import Bot
 from ayase.models import Frame
+from ayase.scrape import scrape_characters
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -18,7 +19,7 @@ async def run_bot():
 
 
 def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
-    if not file:
+    if file is None:
         return
     load_dotenv()
     frames = json.load(file)
@@ -33,8 +34,19 @@ def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
     ctx.exit()
 
 
+def import_characters(ctx: click.Context, param: click.Parameter, amount: int):
+    if amount is None:
+        return
+    load_dotenv()
+
+    asyncio.run(scrape_characters(amount))
+
+    ctx.exit()
+
+
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option("-f", "--frames", type=click.File("r"), callback=import_frames, is_eager=True, expose_value=False)
+@click.option("-c", "--characters", type=int, callback=import_characters, is_eager=True, expose_value=False)
 def cli():
     discord.utils.setup_logging()
     asyncio.run(run_bot())

@@ -1,0 +1,38 @@
+query ($page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+        pageInfo {
+            total
+            currentPage
+            lastPage
+            hasNextPage
+            perPage
+        }
+        characters (sort: FAVOURITES_DESC) {
+            id
+            name {
+                first
+                middle
+                last
+            }
+            image {
+                large
+            }
+            gender
+            media(sort: POPULARITY_DESC) {
+                edges {
+                    node {
+                        id
+                        title {
+                            romaji
+                            english
+                            native
+                        }
+                        type
+                        source
+                    }
+                    relationType
+                }
+            }
+        }
+    }
+}

@@ -1,6 +1,7 @@
 !.env.example
 images/
 frames/*
+*.pgsql
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
