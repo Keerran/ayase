@@ -18,10 +18,23 @@ async def run_bot():
     await bot.start(os.getenv("DISCORD_TOKEN"))
 
 
-def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
-    if file is None:
-        return
+@click.group(context_settings={"help_option_names": ["-h", "--help"]}, invoke_without_command=True)
+@click.pass_context
+def cli(ctx: click.Context):
     load_dotenv()
+    if not ctx.invoked_subcommand:
+        discord.utils.setup_logging()
+        asyncio.run(run_bot())
+
+
+@cli.group("add")
+def add():
+    pass
+
+
+@add.command("frames")
+@click.argument("file", type=click.File("r"))
+def import_frames(file: TextIO):
     frames = json.load(file)
     engine = create_engine(os.getenv("DATABASE_URL"))
 
@@ -31,22 +44,8 @@ def import_frames(ctx: click.Context, param: click.Parameter, file: TextIO):
         session.add_all(rows)
         session.commit()
 
-    ctx.exit()
 
-
-def import_characters(ctx: click.Context, param: click.Parameter, amount: int):
-    if amount is None:
-        return
-    load_dotenv()
-
-    asyncio.run(scrape_characters(amount))
-
-    ctx.exit()
-
-
-@click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.option("-f", "--frames", type=click.File("r"), callback=import_frames, is_eager=True, expose_value=False)
-@click.option("-c", "--characters", type=int, callback=import_characters, is_eager=True, expose_value=False)
-def cli():
-    discord.utils.setup_logging()
-    asyncio.run(run_bot())
+@add.command("characters")
+@click.argument("amount", type=int)
+def import_characters(amount: int):
+    scrape_characters(amount)

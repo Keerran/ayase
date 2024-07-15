@@ -47,7 +47,7 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
     }
 
 
-async def scrape_characters(amount: int):
+def scrape_characters(amount: int):
     with open(Path(__file__).with_name("query.gql"), "r") as f:
         query = f.read()
     characters = []
