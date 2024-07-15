@@ -1,15 +1,22 @@
 from functional import seq
 from io import BytesIO
 from PIL import Image
-from sqlalchemy import create_engine, insert
+from sqlalchemy import Engine, insert
 from sqlalchemy.orm import Session
-from ayase.models import Base, Media, Character, Edition
+from ayase.utils import pass_engine
+from ayase.models import Media, Character, Edition
 from tqdm import tqdm
 from pathlib import Path
+from typing import Any
 from os import path
+import click
 import time
 import requests
-import os
+
+
+@click.group()
+def characters():
+    pass
 
 
 def flatten_name(name: dict[str, str]) -> str:
@@ -47,8 +54,10 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
     }
 
 
-def scrape_characters(amount: int):
-    with open(Path(__file__).with_name("query.gql"), "r") as f:
+@characters.command("top")
+@click.argument("amount", type=int)
+def top_characters(amount: int) -> dict[str, Any]:
+    with open(Path(__file__).with_name("top.gql"), "r") as f:
         query = f.read()
     characters = []
     page = 1
@@ -73,16 +82,15 @@ def scrape_characters(amount: int):
                     time.sleep(1)
 
             res = req.json()
-            characters.extend(res["data"]["Page"]["characters"])
-            pbar.update(perPage)
+            new = res["data"]["Page"]["characters"]
+            pbar.update(len(new))
+            characters.extend(new)
+    return characters
 
-    engine = create_engine(os.getenv("DATABASE_URL"))
 
-    with Session(engine) as session:
-        for table in reversed(Base.metadata.sorted_tables):
-            session.execute(table.delete())
-        session.commit()
-
+@characters.result_callback()
+@pass_engine
+def anilist_to_db(engine: Engine, characters: dict[str, Any]):
     with Session(engine) as session:
         nodes = [get_original_media(char["media"]["edges"]) for char in characters]
         medias = [

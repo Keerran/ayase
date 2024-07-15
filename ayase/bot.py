@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 import discord
 from discord.ext import commands
-from sqlalchemy import create_engine
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 extensions = [
@@ -22,11 +22,11 @@ class Context(commands.Context):
 
 
 class Bot(commands.Bot):
-    def __init__(self):
+    def __init__(self, engine: Engine):
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(command_prefix="d", intents=intents)
-        self.engine = create_engine(os.getenv("DATABASE_URL"))
+        self.engine = engine
 
     async def setup_hook(self):
         self.bot_info = await self.application_info()

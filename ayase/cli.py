@@ -6,15 +6,16 @@ import click
 from typing import TextIO
 from ayase.bot import Bot
 from ayase.models import Frame
-from ayase.scrape import scrape_characters
+from ayase.scrape import characters
+from ayase.utils import pass_engine
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session
 
 
-async def run_bot():
+async def run_bot(engine: Engine):
     load_dotenv()
-    bot = Bot()
+    bot = Bot(engine)
     await bot.start(os.getenv("DISCORD_TOKEN"))
 
 
@@ -22,21 +23,22 @@ async def run_bot():
 @click.pass_context
 def cli(ctx: click.Context):
     load_dotenv()
+    ctx.obj = create_engine(os.getenv("DATABASE_URL"))
     if not ctx.invoked_subcommand:
         discord.utils.setup_logging()
-        asyncio.run(run_bot())
+        asyncio.run(run_bot(ctx.obj))
 
 
-@cli.group("add")
+@cli.group()
 def add():
     pass
 
 
-@add.command("frames")
+@add.command()
 @click.argument("file", type=click.File("r"))
-def import_frames(file: TextIO):
+@pass_engine
+def frames(engine: Engine, file: TextIO):
     frames = json.load(file)
-    engine = create_engine(os.getenv("DATABASE_URL"))
 
     rows = [Frame(name=name, image=f"frames/{image}") for name, image in frames.items()]
 
@@ -45,7 +47,4 @@ def import_frames(file: TextIO):
         session.commit()
 
 
-@add.command("characters")
-@click.argument("amount", type=int)
-def import_characters(amount: int):
-    scrape_characters(amount)
+add.add_command(characters)
