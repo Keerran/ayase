@@ -6,7 +6,7 @@ from ayase.bot import Bot, Context
 from ayase.models import Edition, User, Card, Frame
 from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card
 from sqlalchemy import Engine, select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
 
 drops: dict[int, tuple[Edition]] = {}
@@ -66,7 +66,7 @@ class Cards(commands.Cog):
                 return
         user.last_drop = datetime.now()
         ctx.session.commit()
-        query = select(Edition).order_by(func.random()).limit(3)
+        query = select(Edition).options(joinedload(Edition.character)).order_by(func.random()).limit(3)
         chars = tuple(ctx.session.scalars(query))
         images = [Card(edition_id=char.id, edition=char).image for char in chars]
         choices = img_to_buf(ft.reduce(merge, images))
