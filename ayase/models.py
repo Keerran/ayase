@@ -33,7 +33,7 @@ class Media(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String())
     type: Mapped[str] = mapped_column(String())
-    anilist: Mapped[int] = mapped_column(Integer(), nullable=True)
+    anilist: Mapped[int] = mapped_column(Integer(), nullable=True, unique=True)
 
 
 class Character(Base):
@@ -42,7 +42,7 @@ class Character(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String())
     gender: Mapped[str] = mapped_column(String())
-    anilist: Mapped[str] = mapped_column(Integer(), nullable=True)
+    anilist: Mapped[str] = mapped_column(Integer(), nullable=True, unique=True)
     media_id: Mapped[int] = mapped_column(ForeignKey("medias.id"))
 
     media: Mapped[Media] = relationship()
