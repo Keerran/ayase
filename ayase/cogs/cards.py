@@ -75,8 +75,8 @@ class Cards(commands.Cog):
         drops[message.id] = chars
 
     @commands.hybrid_command(aliases=["c"])
-    async def collection(self, ctx: Context):
-        query = select(Card).where(Card.user_id == ctx.author.id)
+    async def collection(self, ctx: Context, user: discord.User = commands.Author):
+        query = select(Card).where(Card.user_id == user.id)
         cards = ctx.session.scalars(query)
         embed = discord.Embed(title="Collection")
         embed.add_field(name="", value="\n".join([card.display() for card in cards]))
