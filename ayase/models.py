@@ -124,7 +124,7 @@ class Card(Base):
         result = ""
         while n:
             n, r = divmod(n, base)
-            result += digits[r]
+            result = digits[r] + result
         return result.zfill(6)
 
     @classmethod
