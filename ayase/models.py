@@ -2,15 +2,18 @@ from __future__ import annotations
 import string
 from os import path
 from discord.ext import commands
-from PIL import Image
+from PIL import Image, ImageFont
 from ayase.bot import Context
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
+import json
 
 digits = string.digits + string.ascii_lowercase
+with open("frames/boxes.json") as f:
+    boxes = json.load(f)
 
 
 class Base(DeclarativeBase):
@@ -85,14 +88,27 @@ class Card(Base):
     def image(self) -> Image:
         frame_image = self.frame.image if self.frame else f"frames/ed{self.edition.num}.png"
         mask_image = frame_image.replace(".png", "mask.png")
+
         mask = Image.open(mask_image) if path.isfile(mask_image) else None
         frame = Image.open(frame_image).convert("RGBA")
         char = Image.open(self.edition.image).convert("RGBA")
         if mask:
             mask = mask.crop((27, 86, 27 + char.size[0], 86 + char.size[1]))
+
         img = Image.new("RGBA", frame.size)
         img.paste(char, (27, 86), mask=mask)
         img.paste(frame, (0, 0), mask=frame)
+
+        if info := boxes.get(path.basename(frame_image), None):
+            from ayase.utils import fit_text
+
+            top, bottom = info["top"], info["bottom"]
+            font = ImageFont.truetype("frames/JosefinSans.ttf")
+            top_img = fit_text(top, self.character.name, font)
+            bot_img = fit_text(bottom, self.character.media.title, font)
+            img.paste(top_img, (top["x"], top["y"]), mask=top_img)
+            img.paste(bot_img, (bottom["x"], bottom["y"]), mask=bot_img)
+
         return img
 
     @property

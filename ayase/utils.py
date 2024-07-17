@@ -1,6 +1,6 @@
 import io
 import click
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from typing import TypeVar
 from discord.ext import commands
 from ayase.models import Card
@@ -44,6 +44,46 @@ def get_or_create(session: Session, model: type[T], index: dict, defaults: dict 
 def check_owns_card(card: Card, user_id: int):
     if card.user_id != user_id:
         raise commands.BadArgument()
+
+
+def wrap_text(draw: ImageDraw, text: str, width: int, font: ImageFont) -> str:
+    lines = []
+    words = text.split()
+    current_line = []
+
+    for word in words:
+        new_line = " ".join(current_line + [word])
+        new_width = font.getlength(new_line)
+
+        if new_width <= width:
+            current_line.append(word)
+        else:
+            lines.append(" ".join(current_line))
+            current_line = [word]
+
+    lines.append(" ".join(current_line))
+
+    return "\n".join(lines)
+
+
+def fit_text(box: dict[str, float], text: str, font: ImageFont) -> Image:
+    w, h = box["width"], box["height"]
+    im = Image.new("RGBA", (w, h))
+    draw = ImageDraw.Draw(im)
+    font_size = 100
+    size = None
+    while (size is None or size[0] > w or size[1] > h) and font_size > 0:
+        font = font.font_variant(size=font_size)
+        font.set_variation_by_axes([700])
+        wrapped = wrap_text(draw, text, w, font)
+        (x0, y0, x1, y1) = draw.multiline_textbbox((w / 2, h / 2), wrapped, font=font, anchor="mm", align="center")
+        size = (x1 - x0, y1 - y0)
+        font_size -= 1
+
+    wrapped = wrap_text(draw, text, w, font)
+    draw.multiline_text((w / 2, h / 2), wrapped, font=font, fill="black", anchor="mm", align="center")
+
+    return im
 
 
 pass_engine = click.make_pass_decorator(Engine)
