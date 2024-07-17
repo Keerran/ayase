@@ -7,7 +7,7 @@ class Admin(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx: Context) -> bool:
-        return await self.bot.is_owner(ctx.author.id)
+        return await self.bot.is_owner(ctx.author)
 
     @commands.hybrid_command(aliases=["!r"])
     async def reload(self, ctx: Context, cog: str):
