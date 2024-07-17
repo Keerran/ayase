@@ -4,6 +4,7 @@ import asyncio
 import discord
 import click
 from typing import TextIO
+from ayase.labelling import labels
 from ayase.bot import Bot
 from ayase.models import Frame
 from ayase.scrape import characters
@@ -48,3 +49,4 @@ def frames(engine: Engine, file: TextIO):
 
 
 add.add_command(characters)
+add.add_command(labels)
