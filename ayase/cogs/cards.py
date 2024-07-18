@@ -119,6 +119,15 @@ class Cards(commands.Cog):
             card.frame = frame
             session.commit()
 
+    @commands.hybrid_command(aliases=["fr"])
+    async def frameremove(self, ctx: Context, card: Optional[Card] = LatestCard):
+        check_owns_card(card, ctx.author.id)
+        if card.frame is None:
+            return
+        with ctx.session as session:
+            card.frame = None
+            session.commit()
+
     @commands.hybrid_command(aliases=["lu"])
     async def lookup(self, ctx: Context, *, name: str):
         fulltext = Character.name + " " + Media.title
