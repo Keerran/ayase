@@ -1,9 +1,10 @@
 import discord
 import functools as ft
+from os import path
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
-from ayase.models import Edition, User, Card, Frame
+from ayase.models import Edition, Character, Media, User, Card, Frame
 from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
@@ -41,6 +42,27 @@ class Drop(discord.ui.View):
         super().__init__()
         for i in range(3):
             self.add_item(DropButton(engine, i))
+
+
+class CharacterSelect(discord.ui.Select):
+    def __init__(self, engine: Engine, options: list[Character]):
+        super().__init__(options=[
+            discord.SelectOption(label=opt.name, value=opt.id, description=opt.media.title)
+            for opt in options
+        ])
+        self.engine = engine
+
+    async def callback(self, interaction: discord.Interaction):
+        with Session(self.engine) as session:
+            chosen = self.values[0]
+            character = session.get(Character, chosen)
+            edition = character.editions[-1]
+            embed = edition.to_embed(title="Character Lookup")
+            await interaction.response.edit_message(
+                embed=embed,
+                view=None,
+                attachments=[discord.File(edition.image)]
+            )
 
 
 class Cards(commands.Cog):
@@ -96,6 +118,19 @@ class Cards(commands.Cog):
             stmt = select(Frame).where(Frame.name == frame_name)
             card.frame = session.scalar(stmt)
             session.commit()
+
+    @commands.hybrid_command(aliases=["lu"])
+    async def lookup(self, ctx: Context, *, name: str):
+        fulltext = Character.name + " " + Media.title
+        stmt = select(Character)\
+            .where(fulltext.match(name))\
+            .join(Character.media)
+        matches = ctx.session.scalars(stmt).all()
+        view = discord.ui.View()
+        view.add_item(CharacterSelect(self.engine, matches))
+        embed = discord.Embed(title="Character Results")
+        embed.add_field(name="", value="\n".join([match.display() for match in matches]))
+        await ctx.send(embed=embed, view=view)
 
 
 async def setup(bot: Bot):

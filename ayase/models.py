@@ -1,5 +1,6 @@
 from __future__ import annotations
 import string
+import discord
 from os import path
 from discord.ext import commands
 from PIL import Image, ImageFont
@@ -49,6 +50,10 @@ class Character(Base):
     media_id: Mapped[int] = mapped_column(ForeignKey("medias.id"))
 
     media: Mapped[Media] = relationship()
+    editions: Mapped[list[Edition]] = relationship(back_populates="character")
+
+    def display(self) -> str:
+        return f"{self.media.title} · **{self.name}**"
 
 
 class Edition(Base):
@@ -59,9 +64,14 @@ class Edition(Base):
     num: Mapped[int] = mapped_column(Integer())
     image: Mapped[str] = mapped_column(String())
 
-    character: Mapped[Character] = relationship()
+    character: Mapped[Character] = relationship(back_populates="editions")
 
     __table_args__ = (UniqueConstraint("character_id", "num"),)
+
+    def to_embed(self, *, title: str):
+        embed = discord.Embed(title="Character Lookup")
+        embed.add_field(name="", value=f"Character: **{self.character.name}**")
+        embed.set_thumbnail(url=f"attachment://{path.basename(self.image)}")
 
 
 class Frame(Base):
