@@ -1,11 +1,12 @@
 import discord
 import functools as ft
 from os import path
+from typing import Optional
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
 from ayase.models import Edition, Character, Media, User, Card, Frame
-from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card
+from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card, LatestCard
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
@@ -105,14 +106,14 @@ class Cards(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(aliases=["v"])
-    async def view(self, ctx: Context, card: Card):
+    async def view(self, ctx: Context, card: Card = LatestCard):
         embed = discord.Embed(title="Card Details")
         embed.add_field(name="", value=card.display())
         embed.set_image(url=f"attachment://{card.id}.png")
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
 
     @commands.hybrid_command(aliases=["f"])
-    async def frame(self, ctx: Context, card: Card, frame_name: str):
+    async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame_name: str):
         check_owns_card(card, ctx.author.id)
         with ctx.session as session:
             stmt = select(Frame).where(Frame.name == frame_name)

@@ -3,6 +3,7 @@ import click
 from PIL import Image, ImageDraw, ImageFont
 from typing import TypeVar
 from discord.ext import commands
+from ayase.bot import Context
 from ayase.models import Card
 from sqlalchemy import Engine
 from sqlalchemy.exc import NoResultFound
@@ -86,4 +87,16 @@ def fit_text(box: dict[str, float], text: str, font: ImageFont) -> Image:
     return im
 
 
+def get_latest_card(ctx: Context) -> Card:
+    return ctx.session.query(Card)\
+        .filter(Card.user_id == ctx.author.id)\
+        .order_by(Card.id.desc())\
+        .first()
+
+
 pass_engine = click.make_pass_decorator(Engine)
+
+LatestCard = commands.parameter(
+    default=get_latest_card,
+    displayed_default="<latest card>",
+)
