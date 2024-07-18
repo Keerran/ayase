@@ -8,6 +8,7 @@ from ayase.bot import Context
 from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
 import json
@@ -80,6 +81,13 @@ class Frame(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(), unique=True)
     image: Mapped[str] = mapped_column(String(), unique=True)
+
+    @classmethod
+    async def convert(cls: type, ctx: Context, name: str) -> Frame:
+        try:
+            return ctx.session.query(Frame).filter(Frame.name.ilike(name)).one()
+        except NoResultFound:
+            raise commands.BadArgument()
 
 
 class Card(Base):

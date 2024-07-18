@@ -113,11 +113,10 @@ class Cards(commands.Cog):
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
 
     @commands.hybrid_command(aliases=["f"])
-    async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame_name: str):
+    async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame: Frame):
         check_owns_card(card, ctx.author.id)
         with ctx.session as session:
-            stmt = select(Frame).where(Frame.name.ilike(frame_name))
-            card.frame = session.scalar(stmt)
+            card.frame = frame
             session.commit()
 
     @commands.hybrid_command(aliases=["lu"])
