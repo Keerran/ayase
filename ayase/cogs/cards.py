@@ -116,7 +116,7 @@ class Cards(commands.Cog):
     async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame_name: str):
         check_owns_card(card, ctx.author.id)
         with ctx.session as session:
-            stmt = select(Frame).where(Frame.name == frame_name)
+            stmt = select(Frame).where(Frame.name.ilike(frame_name))
             card.frame = session.scalar(stmt)
             session.commit()
 
