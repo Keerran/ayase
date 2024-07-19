@@ -69,10 +69,11 @@ class Edition(Base):
 
     __table_args__ = (UniqueConstraint("character_id", "num"),)
 
-    def to_embed(self, *, title: str):
+    def to_embed(self, *, title: str) -> discord.Embed:
         embed = discord.Embed(title="Character Lookup")
         embed.add_field(name="", value=f"Character: **{self.character.name}**")
         embed.set_thumbnail(url=f"attachment://{path.basename(self.image)}")
+        return embed
 
 
 class Frame(Base):
