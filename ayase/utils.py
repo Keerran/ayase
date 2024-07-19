@@ -66,7 +66,7 @@ def wrap_text(draw: ImageDraw, text: str, width: int, font: ImageFont) -> str:
 
     lines.append(" ".join(current_line))
 
-    return "\n".join(lines)
+    return "\n".join([line for line in lines if line])
 
 
 def fit_text(box: dict[str, float], text: str, font: ImageFont) -> Image:
