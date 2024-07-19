@@ -1,12 +1,12 @@
 import discord
 import functools as ft
-from os import path
 from typing import Optional
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
 from ayase.models import Edition, Character, Media, User, Card, Frame
 from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card, LatestCard
+from ayase.views import PaginatedView
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
@@ -45,9 +45,17 @@ class Drop(discord.ui.View):
             self.add_item(DropButton(engine, i))
 
 
+class CollectionView(PaginatedView):
+    def __init__(self, data: list[Card]):
+        super().__init__(data, title="Collection")
+
+    def format(self, batch: list[Card]):
+        return "\n".join([card.display() for card in batch])
+
+
 class CharacterSelect(discord.ui.Select):
     def __init__(self, engine: Engine, options: list[Character]):
-        super().__init__(options=[
+        super().__init__(row=0, options=[
             discord.SelectOption(label=opt.name, value=opt.id, description=opt.media.title)
             for opt in options
         ])
@@ -64,6 +72,20 @@ class CharacterSelect(discord.ui.Select):
                 view=None,
                 attachments=[discord.File(edition.image)]
             )
+
+
+class CharacterView(PaginatedView):
+    def __init__(self, engine: Engine, data: list[Character]):
+        super().__init__(data, title="Character Results")
+        self.engine = engine
+        self.select = CharacterSelect(self.engine, self.data[self.index])
+        self.add_item(self.select)
+
+    def format(self, batch: list[Character]):
+        self.remove_item(self.select)
+        self.select = CharacterSelect(self.engine, batch)
+        self.add_item(self.select)
+        return "\n".join([character.display() for character in batch])
 
 
 class Cards(commands.Cog):
@@ -101,9 +123,8 @@ class Cards(commands.Cog):
     async def collection(self, ctx: Context, user: discord.User = commands.Author):
         query = select(Card).where(Card.user_id == user.id)
         cards = ctx.session.scalars(query)
-        embed = discord.Embed(title="Collection")
-        embed.add_field(name="", value="\n".join([card.display() for card in cards]))
-        await ctx.send(embed=embed)
+        view = CollectionView(cards)
+        await ctx.send(embed=view.get_embed(), view=view)
 
     @commands.hybrid_command(aliases=["v"])
     async def view(self, ctx: Context, card: Card = LatestCard):
@@ -135,11 +156,8 @@ class Cards(commands.Cog):
             .where(fulltext.match(name))\
             .join(Character.media)
         matches = ctx.session.scalars(stmt).all()
-        view = discord.ui.View()
-        view.add_item(CharacterSelect(self.engine, matches))
-        embed = discord.Embed(title="Character Results")
-        embed.add_field(name="", value="\n".join([match.display() for match in matches]))
-        await ctx.send(embed=embed, view=view)
+        view = CharacterView(self.engine, matches)
+        await ctx.send(embed=view.get_embed(), view=view)
 
 
 async def setup(bot: Bot):

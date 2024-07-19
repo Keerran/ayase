@@ -158,7 +158,7 @@ class Card(Base):
         return card
 
     def display(self) -> str:
-        return f"`{self.slug}` {self.character.name}"
+        return f"`{self.slug}` · `◈{self.edition.num}` · {self.character.media.title} · **{self.character.name}**"
 
 
 class User(Base):

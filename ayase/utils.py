@@ -1,7 +1,8 @@
 import io
 import click
+import itertools as it
 from PIL import Image, ImageDraw, ImageFont
-from typing import TypeVar
+from typing import TypeVar, Iterable, Iterator
 from discord.ext import commands
 from ayase.bot import Context
 from ayase.models import Card
@@ -9,7 +10,8 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session, DeclarativeBase
 
-T = TypeVar("T", bound=DeclarativeBase)
+T = TypeVar("T")
+B = TypeVar("B", bound=DeclarativeBase)
 
 
 def merge(im1: Image, im2: Image):
@@ -30,7 +32,7 @@ def img_to_buf(img: Image, format="PNG"):
     return buf
 
 
-def get_or_create(session: Session, model: type[T], index: dict, defaults: dict = None) -> T:
+def get_or_create(session: Session, model: type[B], index: dict, defaults: dict = None) -> B:
     try:
         return session.query(model).filter_by(**index).one()
     except NoResultFound:
@@ -92,6 +94,15 @@ def get_latest_card(ctx: Context) -> Card:
         .filter(Card.user_id == ctx.author.id)\
         .order_by(Card.id.desc())\
         .first()
+
+
+def batched(iterable: Iterable[T], n: int) -> Iterator[Iterable[T]]:
+    # batched('ABCDEFG', 3) → ABC DEF G
+    if n < 1:
+        raise ValueError('n must be at least one')
+    iterator = iter(iterable)
+    while batch := tuple(it.islice(iterator, n)):
+        yield batch
 
 
 pass_engine = click.make_pass_decorator(Engine)
