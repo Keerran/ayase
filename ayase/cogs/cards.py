@@ -5,8 +5,8 @@ from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
 from ayase.models import Edition, Character, Media, User, Card, Frame
-from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card, LatestCard
-from ayase.views import PaginatedView
+from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card, LatestCard, frame_test_image
+from ayase.views import PaginatedView, confirm_view
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
@@ -136,18 +136,22 @@ class Cards(commands.Cog):
     @commands.hybrid_command(aliases=["f"])
     async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame: Frame):
         check_owns_card(card, ctx.author.id)
-        with ctx.session as session:
-            card.frame = frame
-            session.commit()
+        image = img_to_buf(frame_test_image(card, frame))
+        view = confirm_view(lambda _: ctx.session.commit())
+        embed = discord.Embed()
+        embed.set_image(url=f"attachment://{card.id}_frame_change.png")
+        await ctx.send(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
 
     @commands.hybrid_command(aliases=["fr"])
     async def frameremove(self, ctx: Context, card: Optional[Card] = LatestCard):
         check_owns_card(card, ctx.author.id)
         if card.frame is None:
             return
-        with ctx.session as session:
-            card.frame = None
-            session.commit()
+        image = img_to_buf(frame_test_image(card, None))
+        view = confirm_view(lambda _: ctx.session.commit())
+        embed = discord.Embed()
+        embed.set_image(url=f"attachment://{card.id}_frame_change.png")
+        await ctx.send(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
 
     @commands.hybrid_command(aliases=["lu"])
     async def lookup(self, ctx: Context, *, name: str):

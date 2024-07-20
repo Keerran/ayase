@@ -2,10 +2,10 @@ import io
 import click
 import itertools as it
 from PIL import Image, ImageDraw, ImageFont
-from typing import TypeVar, Iterable, Iterator
+from typing import TypeVar, Iterable, Iterator, Optional
 from discord.ext import commands
 from ayase.bot import Context
-from ayase.models import Card
+from ayase.models import Card, Frame
 from sqlalchemy import Engine
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session, DeclarativeBase
@@ -23,6 +23,13 @@ def merge(im1: Image, im2: Image):
     im.paste(im2, (im1.size[0], 0))
 
     return im
+
+
+def frame_test_image(card: Card, frame: Optional[Frame]) -> Image:
+    before = card.image
+    card.frame = frame
+    after = card.image
+    return merge(before, after)
 
 
 def img_to_buf(img: Image, format="PNG"):
