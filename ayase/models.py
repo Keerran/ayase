@@ -99,6 +99,7 @@ class Card(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     frame_id: Mapped[int] = mapped_column(ForeignKey("frames.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
+    grabbed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), default=lambda ctx: ctx.get_current_parameters()["user_id"])
 
     edition: Mapped[Edition] = relationship()
     frame: Mapped[Frame] = relationship()
