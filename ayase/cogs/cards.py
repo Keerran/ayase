@@ -163,6 +163,17 @@ class Cards(commands.Cog):
         view = CharacterView(self.engine, matches)
         await ctx.send(embed=view.get_embed(), view=view)
 
+    @commands.hybrid_command(aliases=["g"])
+    async def give(self, ctx: Context, card: Optional[Card] = LatestCard, *, recipient: discord.User):
+        check_owns_card(card, ctx.author.id)
+        embed = discord.Embed(title="Card Transfer")
+        embed.add_field(name="", value=f"{ctx.author.mention} → {recipient.mention}", inline=False)
+        embed.add_field(name="", value=card.display(), inline=False)
+        embed.set_image(url=f"attachment://{card.id}.png")
+        card.user_id = recipient.id
+        view = confirm_view(lambda _: ctx.session.commit())
+        await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"), view=view)
+
 
 async def setup(bot: Bot):
     await bot.add_cog(Cards(bot))
