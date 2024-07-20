@@ -128,8 +128,10 @@ class Cards(commands.Cog):
 
     @commands.hybrid_command(aliases=["v"])
     async def view(self, ctx: Context, card: Card = LatestCard):
+        owner = await self.bot.fetch_user(card.user_id)
         embed = discord.Embed(title="Card Details")
-        embed.add_field(name="", value=card.display())
+        embed.add_field(name="", value=f"Owned by: {owner.mention}", inline=False)
+        embed.add_field(name="", value=card.display(), inline=False)
         embed.set_image(url=f"attachment://{card.id}.png")
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
 
