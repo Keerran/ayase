@@ -26,11 +26,9 @@ class DropButton(discord.ui.Button):
             return
         with Session(self.engine) as session:
             user = get_or_create(session, User, {"id": interaction.user.id})
-            if user.last_grab:
-                time = 600 - (datetime.now() - user.last_grab).seconds
-                if time > 0:
-                    await interaction.response.send_message(f"{interaction.user.mention}, you must wait `{time // 60}m` before grabbing again.")
-                    return
+            if user.grab_cooldown > 0:
+                await interaction.response.send_message(f"{interaction.user.mention}, you must wait `{user.grab_cooldown // 60}m` before grabbing again.")
+                return
             user.last_grab = datetime.now()
             session.add(Card(
                 edition_id=choice.id,
@@ -107,11 +105,9 @@ class Cards(commands.Cog):
     @commands.hybrid_command(aliases=["d"])
     async def drop(self, ctx: Context):
         user = get_or_create(ctx.session, User, {"id": ctx.author.id})
-        if user.last_drop:
-            time = 1800 - (datetime.now() - user.last_drop).seconds
-            if time > 0:
-                await ctx.send(f"You must wait `{time // 60}m` before dropping again.")
-                return
+        if user.drop_cooldown > 0:
+            await ctx.send(f"{ctx.author.mention}, you must wait `{user.drop_cooldown // 60}m` before dropping again.")
+            return
         user.last_drop = datetime.now()
         ctx.session.commit()
         query = select(Edition).options(joinedload(Edition.character)).order_by(func.random()).limit(3)
@@ -178,6 +174,18 @@ class Cards(commands.Cog):
         card.user_id = recipient.id
         view = confirm_view(lambda _: ctx.session.commit())
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"), view=view)
+
+    @commands.hybrid_command(aliases=["cd"])
+    async def cooldowns(self, ctx: Context):
+        def format_time(time: int) -> str:
+            if time <= 0:
+                return "currently available"
+            return f"available in `{time // 60} minutes`"
+        user = get_or_create(ctx.session, User, {"id": ctx.author.id})
+        embed = discord.Embed(title="View Cooldowns")
+        embed.add_field(name="", value="Showing cooldowns for " + ctx.author.mention, inline=False)
+        embed.add_field(name="", value=f"**Grab** is {format_time(user.grab_cooldown)}\n**Drop** is {format_time(user.drop_cooldown)}")
+        await ctx.send(embed=embed)
 
 
 async def setup(bot: Bot):

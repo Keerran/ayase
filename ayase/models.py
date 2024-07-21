@@ -168,3 +168,15 @@ class User(Base):
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
     last_drop: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
     last_grab: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
+
+    @property
+    def drop_cooldown(self) -> int:
+        if self.last_drop is None:
+            return 0
+        return 1800 - (datetime.now() - self.last_drop).seconds
+
+    @property
+    def grab_cooldown(self) -> int:
+        if self.last_grab is None:
+            return 0
+        return 600 - (datetime.now() - self.last_grab).seconds
