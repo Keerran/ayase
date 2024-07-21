@@ -11,7 +11,7 @@ from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
 
-drops: dict[int, tuple[Edition]] = {}
+drops: dict[int, list[Edition]] = {}
 
 
 class DropButton(discord.ui.Button):
@@ -22,12 +22,14 @@ class DropButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         choice = drops[interaction.message.id][self.index]
+        if choice is None:
+            return
         with Session(self.engine) as session:
             user = get_or_create(session, User, {"id": interaction.user.id})
             if user.last_grab:
                 time = 600 - (datetime.now() - user.last_grab).seconds
                 if time > 0:
-                    await interaction.response.send_message(f"You must wait `{time // 60}m` before grabbing again.")
+                    await interaction.response.send_message(f"{interaction.user.mention}, you must wait `{time // 60}m` before grabbing again.")
                     return
             user.last_grab = datetime.now()
             session.add(Card(
@@ -35,6 +37,7 @@ class DropButton(discord.ui.Button):
                 user_id=interaction.user.id,
             ))
             session.commit()
+            drops[interaction.message.id][self.index] = None
         await interaction.response.send_message(choice.character.name)
 
 
@@ -112,7 +115,7 @@ class Cards(commands.Cog):
         user.last_drop = datetime.now()
         ctx.session.commit()
         query = select(Edition).options(joinedload(Edition.character)).order_by(func.random()).limit(3)
-        chars = tuple(ctx.session.scalars(query))
+        chars = list(ctx.session.scalars(query))
         images = [Card(edition_id=char.id, edition=char).image for char in chars]
         choices = img_to_buf(ft.reduce(merge, images))
 
