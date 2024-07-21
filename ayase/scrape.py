@@ -4,7 +4,7 @@ from PIL import Image
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
-from ayase.utils import pass_engine
+from ayase.utils import pass_engine, upsert
 from ayase.models import Media, Character, Edition
 from tqdm import tqdm
 from pathlib import Path
@@ -67,6 +67,33 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
     }
 
 
+@characters.command("update")
+@pass_engine
+def update(engine: Engine):
+    session = Session(engine)
+    with open(Path(__file__).with_name("update.gql"), "r") as f:
+        query = f.read()
+    page = 1
+    ids = session.scalars(select(Character.anilist)).all()
+    results = []
+    for _ in tqdm(range((len(ids) // 100) + 1)):
+        res = anilist_request({
+            "query": query,
+            "variables": {
+                "characters": ids,
+                "page": page,
+                "perPage": 100,
+            }
+        })
+        results.extend(res["Page"]["characters"])
+        page += 1
+        if not res["Page"]["pageInfo"]["hasNextPage"]:
+            break
+    for char in results:
+        char["media"] = get_original_media(char["media"]["edges"])
+    return results
+
+
 @characters.command("medias")
 @click.argument("file", type=click.File("r"))
 def medias(file: TextIO):
@@ -126,16 +153,18 @@ def top_characters(amount: int) -> dict[str, Any]:
 def anilist_to_db(engine: Engine, characters: dict[str, Any]):
     with Session(engine) as session:
         nodes = [char["media"] for char in characters]
-        medias = [
-            {
+        medias = {
+            node["id"]: {
                 "title": flatten_title(node["title"]),
                 "type": node["type"],
                 "anilist": node["id"],
             }
             for node in nodes
-        ]
-        existing = session.scalars(select(Media).where(Media.anilist.in_([media["anilist"] for media in medias])))
-        medias = session.scalars(insert(Media).values(medias).on_conflict_do_nothing(index_elements=["anilist"]).returning(Media))
+        }
+        existing = session.scalars(select(Media).where(Media.anilist.in_([media["anilist"] for media in medias.values()])))
+        medias = session.scalars(
+            upsert(Media, list(medias.values()), ["anilist"], ["title", "type"]).returning(Media)
+        )
         medias = {media.anilist: media for media in medias.all() + existing.all()}
         characters = [
             char
@@ -143,7 +172,9 @@ def anilist_to_db(engine: Engine, characters: dict[str, Any]):
                              .zip(nodes)
                              .map(lambda p: create_character(medias, p[0], p[1])), total=len(characters))
         ]
-        characters = session.scalars(insert(Character).on_conflict_do_nothing(index_elements=["anilist"]).values(characters).returning(Character))
+        characters = session.scalars(
+            upsert(Character, characters, ["anilist"], ["name", "gender"]).returning(Character)
+        )
         editions = [
             {
                 "character_id": char.id,
@@ -152,5 +183,5 @@ def anilist_to_db(engine: Engine, characters: dict[str, Any]):
             }
             for char in characters
         ]
-        session.execute(insert(Edition).values(editions))
+        session.execute(insert(Edition).on_conflict_do_nothing(constraint="uq_editions_character_id").values(editions))
         session.commit()

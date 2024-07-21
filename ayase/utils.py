@@ -7,6 +7,7 @@ from discord.ext import commands
 from ayase.bot import Context
 from ayase.models import Card, Frame
 from sqlalchemy import Engine
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session, DeclarativeBase
 
@@ -49,6 +50,14 @@ def get_or_create(session: Session, model: type[B], index: dict, defaults: dict 
         session.add(item)
         session.commit()
         return item
+
+
+def upsert(model: type[B], rows: list[dict], index_elements: list[str], update_elements=list[str]) -> list[B]:
+    stmt = insert(model).values(rows)
+    return stmt.on_conflict_do_update(
+        set_={col: getattr(stmt.excluded, col) for col in update_elements},
+        index_elements=index_elements,
+    )
 
 
 def check_owns_card(card: Card, user_id: int):
