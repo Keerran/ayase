@@ -13,6 +13,8 @@ query ($characters: [Int], $page: Int, $perPage: Int) {
                 first
                 middle
                 last
+                alternative
+                alternativeSpoiler
             }
             image {
                 large

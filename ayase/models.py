@@ -5,7 +5,7 @@ from os import path
 from discord.ext import commands
 from PIL import Image, ImageFont
 from ayase.bot import Context
-from sqlalchemy import String, BigInteger, Integer, DateTime, ForeignKey, MetaData
+from sqlalchemy import String, BigInteger, Integer, Boolean, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.orm.exc import NoResultFound
@@ -52,9 +52,23 @@ class Character(Base):
 
     media: Mapped[Media] = relationship()
     editions: Mapped[list[Edition]] = relationship(back_populates="character")
+    aliases: Mapped[list[Alias]] = relationship(back_populates="character")
 
     def display(self) -> str:
         return f"{self.media.title} · **{self.name}**"
+
+
+class Alias(Base):
+    __tablename__ = "aliases"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String())
+    character_id: Mapped[int] = mapped_column(ForeignKey("characters.id"))
+    is_spoiler: Mapped[bool] = mapped_column(Boolean(), default=False)
+
+    character: Mapped[Character] = relationship(back_populates="aliases")
+
+    __table_args__ = (UniqueConstraint("character_id", "name"),)
 
 
 class Edition(Base):

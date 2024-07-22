@@ -1,11 +1,11 @@
 from functional import seq
 from io import BytesIO
 from PIL import Image
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from ayase.utils import pass_engine, upsert
-from ayase.models import Media, Character, Edition
+from ayase.models import Media, Character, Edition, Alias
 from tqdm import tqdm
 from pathlib import Path
 from typing import Any
@@ -14,6 +14,11 @@ from typing import TextIO
 import click
 import time
 import requests
+import re
+
+JAPANESE_CHARACTERS = r"[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]"
+KOREAN_CHARACTERS = r"[\uAC00-\uD7A3]"
+REGEX = re.compile(JAPANESE_CHARACTERS + "|" + KOREAN_CHARACTERS)
 
 
 @click.group()
@@ -59,11 +64,14 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
         res = requests.get(char["image"]["large"])
         img = Image.open(BytesIO(res.content))
         img.save(file)
+    aliases = [Alias(name=name) for name in set(char["name"]["alternative"]) if REGEX.search(name) is None]
+    spoiler_aliases = [Alias(name=name, is_spoiler=True) for name in set(char["name"]["alternativeSpoiler"]) if REGEX.search(name) is None]
     return {
-        "name": flatten_name(char["name"]),
+        "name": flatten_name(char["name"]).strip(),
         "gender": char["gender"] or "",
         "anilist": char["id"],
-        "media_id": medias[node["id"]].id
+        "media_id": medias[node["id"]].id,
+        "aliases": aliases + spoiler_aliases
     }
 
 
@@ -172,9 +180,16 @@ def anilist_to_db(engine: Engine, characters: dict[str, Any]):
                              .zip(nodes)
                              .map(lambda p: create_character(medias, p[0], p[1])), total=len(characters))
         ]
-        characters = session.scalars(
+        session.execute(delete(Alias))
+        aliases = {char["anilist"]: char.pop("aliases") for char in characters}
+        existing = session.query(Character).filter(Character.anilist.in_([char["anilist"] for char in characters])).all()
+        characters = existing + session.scalars(
             upsert(Character, characters, ["anilist"], ["name", "gender"]).returning(Character)
-        )
+        ).all()
+
+        for char in characters:
+            char.aliases = aliases[char.anilist]
+
         editions = [
             {
                 "character_id": char.id,

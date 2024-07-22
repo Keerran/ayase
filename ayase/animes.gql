@@ -13,6 +13,8 @@ query ($medias: [Int], $page: Int, $perPage: Int) {
                 romaji
                 english
                 native
+                alternative
+                alternativeSpoiler
             }
             type
             source
