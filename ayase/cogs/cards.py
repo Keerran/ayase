@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
-from ayase.models import Edition, Character, Media, User, Card, Frame
+from ayase.models import Edition, Character, Media, User, Card, Frame, Alias
 from ayase.utils import merge, img_to_buf, get_or_create, check_owns_card, LatestCard, frame_test_image
 from ayase.views import PaginatedView, confirm_view
 from sqlalchemy import Engine, select, update
@@ -87,6 +87,28 @@ class CharacterView(PaginatedView):
         self.select = CharacterSelect(self.engine, batch)
         self.add_item(self.select)
         return "\n".join([character.display() for character in batch])
+
+
+class AliasSelect(discord.ui.Select):
+    def __init__(self, session: Session, card: Card, options: list[Alias]):
+        super().__init__(row=0, options=[
+            discord.SelectOption(label=opt.name, value=opt.id)
+            for opt in options
+        ])
+        self.session = session
+        self.card = card
+
+    async def callback(self, interaction: discord.Interaction):
+        chosen = self.values[0]
+        self.card.alias_id = chosen
+        self.session.commit()
+        embed = discord.Embed(title="Card Details")
+        embed.add_field(name="", value=self.card.display(), inline=False)
+        embed.set_image(url=f"attachment://{self.card.id}.png")
+        await interaction.response.edit_message(
+            embed=embed,
+            attachments=[discord.File(img_to_buf(self.card.image), f"{self.card.id}.png")],
+        )
 
 
 class Cards(commands.Cog):
@@ -174,6 +196,22 @@ class Cards(commands.Cog):
         card.user_id = recipient.id
         view = confirm_view(lambda _: ctx.session.commit())
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"), view=view)
+
+    @commands.hybrid_command()
+    async def alias(self, ctx: Context, card: Optional[Card] = LatestCard):
+        check_owns_card(card, ctx.author.id)
+        view = discord.ui.View()
+        aliases = ctx.session.query(Alias).where(Alias.character_id == card.character.id)
+        view.add_item(AliasSelect(ctx.session, card, aliases))
+        await ctx.send(view=view)
+
+    @commands.hybrid_command()
+    async def aliasremove(self, ctx: Context, card: Optional[Card] = LatestCard):
+        check_owns_card(card, ctx.author.id)
+        with ctx.session as session:
+            card.alias = None
+            session.commit()
+        await ctx.send("✅ Alias removed.")
 
     @commands.hybrid_command(aliases=["cd"])
     async def cooldowns(self, ctx: Context):

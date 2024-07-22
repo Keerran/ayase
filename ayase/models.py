@@ -112,11 +112,19 @@ class Card(Base):
     edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     frame_id: Mapped[int] = mapped_column(ForeignKey("frames.id"), nullable=True)
+    alias_id: Mapped[int] = mapped_column(ForeignKey("aliases.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     grabbed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), default=lambda ctx: ctx.get_current_parameters()["user_id"])
 
     edition: Mapped[Edition] = relationship()
     frame: Mapped[Frame] = relationship()
+    alias: Mapped[Alias] = relationship()
+
+    @property
+    def name(self) -> str:
+        if self.alias:
+            return self.alias.name
+        return self.character.name
 
     @property
     def image(self) -> Image:
@@ -138,7 +146,7 @@ class Card(Base):
 
             top, bottom = info["top"], info["bottom"]
             font = ImageFont.truetype("frames/JosefinSans.ttf")
-            top_img = fit_text(top, self.character.name, font)
+            top_img = fit_text(top, self.name, font)
             bot_img = fit_text(bottom, self.character.media.title, font)
             img.paste(top_img, (top["x"], top["y"]), mask=top_img)
             img.paste(bot_img, (bottom["x"], bottom["y"]), mask=bot_img)
@@ -173,7 +181,7 @@ class Card(Base):
         return card
 
     def display(self) -> str:
-        return f"`{self.slug}` · `◈{self.edition.num}` · {self.character.media.title} · **{self.character.name}**"
+        return f"`{self.slug}` · `◈{self.edition.num}` · {self.character.media.title} · **{self.name}**"
 
 
 class User(Base):
