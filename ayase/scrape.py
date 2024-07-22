@@ -28,11 +28,12 @@ def characters():
 
 def anilist_request(data: dict) -> dict:
     req = requests.post("https://graphql.anilist.co/", json=data)
-    req.raise_for_status()
-    limit = int(req.headers["X-RateLimit-Remaining"])
-    if limit <= 1:
-        for _ in tqdm(range(60), leave=False):
+    if req.status_code == 429:
+        wait = int(req.headers["Retry-After"])
+        for _ in tqdm(range(wait), leave=False):
             time.sleep(1)
+        req = requests.post("https://graphql.anilist.co/", json=data)
+    req.raise_for_status()
 
     return req.json()["data"]
 
