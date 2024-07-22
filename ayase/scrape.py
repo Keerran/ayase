@@ -1,11 +1,11 @@
 from functional import seq
 from io import BytesIO
 from PIL import Image
-from sqlalchemy import Engine, select, delete
+from sqlalchemy import Engine, select, delete, update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from ayase.utils import pass_engine, upsert
-from ayase.models import Media, Character, Edition, Alias
+from ayase.models import Media, Character, Edition, Alias, Card
 from tqdm import tqdm
 from pathlib import Path
 from typing import Any
@@ -78,14 +78,14 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
 
 @characters.command("update")
 @pass_engine
-def update(engine: Engine):
+def update_characters(engine: Engine):
     session = Session(engine)
     with open(Path(__file__).with_name("update.gql"), "r") as f:
         query = f.read()
     page = 1
     ids = session.scalars(select(Character.anilist)).all()
     results = []
-    for _ in tqdm(range((len(ids) // 100) + 1)):
+    while True:
         res = anilist_request({
             "query": query,
             "variables": {
@@ -181,6 +181,7 @@ def anilist_to_db(engine: Engine, characters: dict[str, Any]):
                              .zip(nodes)
                              .map(lambda p: create_character(medias, p[0], p[1])), total=len(characters))
         ]
+        session.execute(update(Card).values({"alias_id": None}))
         session.execute(delete(Alias))
         aliases = {char["anilist"]: char.pop("aliases") for char in characters}
         existing = session.query(Character).filter(Character.anilist.in_([char["anilist"] for char in characters])).all()
