@@ -95,7 +95,7 @@ def fit_text(box: dict[str, float], text: str, font: ImageFont) -> Image:
         font = font.font_variant(size=font_size)
         font.set_variation_by_axes([700])
         wrapped = wrap_text(draw, text, w, font)
-        (x0, y0, x1, y1) = draw.multiline_textbbox((w / 2, h / 2), wrapped, font=font, anchor="mm", align="center")
+        (x0, y0, x1, y1) = draw.multiline_textbbox((w / 2, h / 2), wrapped, font=font, anchor="mm", align="center", stroke_width=5)
         size = (x1 - x0, y1 - y0)
         font_size -= 1
 
