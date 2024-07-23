@@ -146,8 +146,8 @@ class Card(Base):
 
             top, bottom = info["top"], info["bottom"]
             font = ImageFont.truetype("frames/JosefinSans.ttf")
-            top_img = fit_text(top, self.name, font)
-            bot_img = fit_text(bottom, self.character.media.title, font)
+            top_img = fit_text(top, self.character.media.title, font)
+            bot_img = fit_text(bottom, self.name, font)
             img.paste(top_img, (top["x"], top["y"]), mask=top_img)
             img.paste(bot_img, (bottom["x"], bottom["y"]), mask=bot_img)
 
