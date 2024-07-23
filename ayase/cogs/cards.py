@@ -30,13 +30,15 @@ class DropButton(discord.ui.Button):
                 await interaction.response.send_message(f"{interaction.user.mention}, you must wait `{user.grab_cooldown // 60}m` before grabbing again.")
                 return
             user.last_grab = datetime.now()
-            session.add(Card(
+            card = Card(
                 edition_id=choice.id,
                 user_id=interaction.user.id,
-            ))
+            )
+            session.add(card)
             session.commit()
             drops[interaction.message.id][self.index] = None
-        await interaction.response.send_message(choice.character.name)
+
+            await interaction.response.send_message(f"{interaction.user.mention} took the **{choice.character.name}** card `{card.slug}`!")
 
 
 class Drop(discord.ui.View):
