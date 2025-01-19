@@ -13,18 +13,18 @@ query ($medias: [Int], $page: Int, $perPage: Int) {
                 romaji
                 english
                 native
-                alternative
-                alternativeSpoiler
             }
             type
             source
-            characters(sort: [FAVOURITES], page: 1, perPage: 25) {
+            characters(sort: [FAVOURITES_DESC], page: 1, perPage: 25) {
                 nodes {
                     id
                     name {
                         first
                         middle
                         last
+                        alternative
+                        alternativeSpoiler
                     }
                     image {
                         large
