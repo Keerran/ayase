@@ -204,6 +204,9 @@ class Cards(commands.Cog):
         check_owns_card(card, ctx.author.id)
         view = discord.ui.View()
         aliases = ctx.session.query(Alias).where(Alias.character_id == card.character.id)
+        if aliases.count() == 0:
+            await ctx.send(f"**{card.name}** has no aliases.")
+            return
         view.add_item(AliasSelect(ctx.session, card, aliases))
         await ctx.send(view=view)
 
