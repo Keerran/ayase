@@ -34,5 +34,7 @@ class Bot(commands.Bot):
         for ext in extensions:
             await self.load_extension(ext)
 
+        await self.tree.sync()
+
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
