@@ -143,6 +143,16 @@ class Cards(commands.Cog):
         embed.set_image(url=f"attachment://{card.id}.png")
         await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"))
 
+    @commands.hybrid_command(aliases=["fl"])
+    async def framelist(self, ctx: Context):
+        frames = ctx.session.scalars(select(Frame))
+        lines = [
+            f"`{frame.name}`"
+            for frame in frames
+        ]
+        view = PaginatedView(lines, title="Frames")
+        await ctx.send(embed=view.get_embed(), view=view)
+
     @commands.hybrid_command(aliases=["f"])
     async def frame(self, ctx: Context, card: Optional[Card] = LatestCard, *, frame: Frame):
         check_owns_card(card, ctx.author.id)
