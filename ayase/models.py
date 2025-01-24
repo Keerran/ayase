@@ -1,4 +1,5 @@
 from __future__ import annotations
+import emoji
 import string
 import discord
 from os import path
@@ -7,7 +8,7 @@ from PIL import Image, ImageFont
 from ayase.bot import Context
 from sqlalchemy import String, BigInteger, Integer, Boolean, DateTime, ForeignKey, MetaData
 from sqlalchemy.sql import func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import UniqueConstraint
 from datetime import datetime
@@ -113,12 +114,14 @@ class Card(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     frame_id: Mapped[int] = mapped_column(ForeignKey("frames.id"), nullable=True)
     alias_id: Mapped[int] = mapped_column(ForeignKey("aliases.id"), nullable=True)
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     grabbed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), default=lambda ctx: ctx.get_current_parameters()["user_id"])
 
     edition: Mapped[Edition] = relationship()
     frame: Mapped[Frame] = relationship()
     alias: Mapped[Alias] = relationship()
+    tag: Mapped[Tag] = relationship()
 
     @property
     def name(self) -> str:
@@ -181,7 +184,8 @@ class Card(Base):
         return card
 
     def display(self) -> str:
-        return f"`{self.slug}` · `◈{self.edition.num}` · {self.character.media.title} · **{self.name}**"
+        tag = self.tag.emoji if self.tag is not None else "◾"
+        return f"{tag} `{self.slug}` · `◈{self.edition.num}` · {self.character.media.title} · **{self.name}**"
 
 
 class User(Base):
@@ -202,3 +206,33 @@ class User(Base):
         if self.last_grab is None:
             return 0
         return 600 - (datetime.now() - self.last_grab).seconds
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    name: Mapped[string] = mapped_column(String())
+    emoji: Mapped[string] = mapped_column(String())
+
+    cards: Mapped[list[Card]] = relationship(back_populates="tag")
+
+    __table_args__ = (
+        UniqueConstraint("name", "user_id"),
+        UniqueConstraint("emoji", "user_id"),
+    )
+
+    @validates("emoji")
+    def validate_emoji(self, _key: str, value: str):
+        if not emoji.is_emoji(value):
+            raise ValueError("`Tag.emoji` must be a single unicode emoji")
+        return value
+
+    @classmethod
+    async def convert(cls: type, ctx: Context, name: str) -> Tag:
+        print(name)
+        card = ctx.session.query(Tag).filter(Tag.name == name, Tag.user_id == ctx.author.id).one_or_none()
+        if card is None:
+            raise commands.BadArgument()
+        return card

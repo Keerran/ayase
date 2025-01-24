@@ -48,14 +48,6 @@ class Drop(discord.ui.View):
             self.add_item(DropButton(engine, i))
 
 
-class CollectionView(PaginatedView):
-    def __init__(self, data: list[Card]):
-        super().__init__(data, title="Collection")
-
-    def format(self, batch: list[Card]):
-        return "\n".join([card.display() for card in batch])
-
-
 class CharacterSelect(discord.ui.Select):
     def __init__(self, engine: Engine, options: list[Character]):
         super().__init__(row=0, options=[
@@ -141,13 +133,6 @@ class Cards(commands.Cog):
 
         message = await ctx.send(file=discord.File(choices, "drop.png"), view=Drop(self.engine))
         drops[message.id] = chars
-
-    @commands.hybrid_command(aliases=["c"])
-    async def collection(self, ctx: Context, user: discord.User = commands.Author):
-        query = select(Card).where(Card.user_id == user.id)
-        cards = ctx.session.scalars(query)
-        view = CollectionView(cards)
-        await ctx.send(embed=view.get_embed(), view=view)
 
     @commands.hybrid_command(aliases=["v"])
     async def view(self, ctx: Context, card: Card = LatestCard):

@@ -11,12 +11,13 @@ dependencies = [
     "alembic>=1.13.2",
     "python-dotenv>=1.0.1",
     "psycopg2>=2.9.9",
-    "discord.py>=2.4.0",
+    "discord-py>=2.4.0",
     "pillow>=10.4.0",
     "click>=8.1.7",
     "requests>=2.32.3",
     "pyfunctional>=1.5.0",
     "tqdm>=4.66.4",
+    "emoji>=2.14.1",
 ]
 
 [project.optional-dependencies]

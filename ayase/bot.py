@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 extensions = [
     "ayase.cogs.admin",
     "ayase.cogs.cards",
+    "ayase.cogs.collection",
     "ayase.cogs.misc",
 ]
 
