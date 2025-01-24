@@ -67,6 +67,12 @@ class ConfirmView(discord.ui.View):
     def __init__(self):
         super().__init__()
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if original := interaction.message.reference:
+            message = await interaction.channel.fetch_message(original.message_id)
+            return interaction.user.id == message.author.id
+        return true
+
     @discord.ui.button(label="❌")
     async def deny_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.deny(interaction)

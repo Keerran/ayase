@@ -150,7 +150,7 @@ class Cards(commands.Cog):
         view = confirm_view(lambda _: ctx.session.commit())
         embed = discord.Embed()
         embed.set_image(url=f"attachment://{card.id}_frame_change.png")
-        await ctx.send(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
+        await ctx.reply(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
 
     @commands.hybrid_command(aliases=["fr"])
     async def frameremove(self, ctx: Context, card: Optional[Card] = LatestCard):
@@ -161,7 +161,7 @@ class Cards(commands.Cog):
         view = confirm_view(lambda _: ctx.session.commit())
         embed = discord.Embed()
         embed.set_image(url=f"attachment://{card.id}_frame_change.png")
-        await ctx.send(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
+        await ctx.reply(embed=embed, file=discord.File(image, f"{card.id}_frame_change.png"), view=view)
 
     @commands.hybrid_command(aliases=["lu"])
     async def lookup(self, ctx: Context, *, name: str):
@@ -182,7 +182,7 @@ class Cards(commands.Cog):
         embed.set_image(url=f"attachment://{card.id}.png")
         card.user_id = recipient.id
         view = confirm_view(lambda _: ctx.session.commit())
-        await ctx.send(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"), view=view)
+        await ctx.reply(embed=embed, file=discord.File(img_to_buf(card.image), f"{card.id}.png"), view=view)
 
     @commands.hybrid_command()
     async def alias(self, ctx: Context, card: Optional[Card] = LatestCard):
