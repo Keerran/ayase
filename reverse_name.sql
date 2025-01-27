@@ -6,8 +6,12 @@ SELECT ARRAY(
 );
 $$ LANGUAGE 'sql' STRICT IMMUTABLE;
 
-UPDATE characters
-    SET name = array_to_string(array_reverse(string_to_array(name, ' ')), ' ')
-    FROM medias
-    WHERE characters.media_id = medias.id
-    AND medias.title = 'One Piece';
+
+CREATE OR REPLACE FUNCTION reverse_name(text) RETURNS text AS $$
+    SELECT array_to_string(array_reverse(string_to_array($1, ' ')), ' ');
+$$ LANGUAGE 'sql' STRICT IMMUTABLE;
+-- UPDATE characters
+--     SET name = array_to_string(array_reverse(string_to_array(name, ' ')), ' ')
+--     FROM medias
+--     WHERE characters.media_id = medias.id
+--     AND medias.title = 'One Piece';
