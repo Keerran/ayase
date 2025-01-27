@@ -12,6 +12,7 @@ from ayase.utils import pass_engine
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session
+from ayase.modify import modify
 
 
 async def run_bot(engine: Engine):
@@ -48,5 +49,6 @@ def frames(engine: Engine, file: TextIO):
         session.commit()
 
 
+cli.add_command(modify)
 add.add_command(characters)
 add.add_command(labels)
