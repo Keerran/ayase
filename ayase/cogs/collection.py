@@ -7,7 +7,7 @@ from ayase.bot import Bot, Context
 from ayase.models import Tag
 from sqlalchemy import exc
 from sqlalchemy import select
-from ayase.views import PaginatedView
+from ayase.views import PaginatedView, ConfirmView
 from ayase.models import Card
 from ayase.utils import check_owns_card
 from ayase.models import Edition
@@ -20,6 +20,16 @@ class CollectionView(PaginatedView):
 
     def format(self, batch: list[Card]):
         return "\n".join([card.display() for card in batch])
+
+
+class BurnView(ConfirmView):
+    def __init__(self, ctx: Context, card: Card):
+        super().__init__()
+        self.confirm_button.label = "🔥"
+
+    async def confirm(self, interaction: discord.Interaction):
+        await self.ctx.session.delete(self.card)
+        await self.ctx.session.commit()
 
 
 def unicode_emoji(arg: str):
@@ -107,6 +117,12 @@ class Collection(commands.Cog):
         card.tag_id = None
         ctx.session.commit()
         await ctx.reply(f"{ctx.author.mention}, the **{card.name}** has been untagged successfully.")
+
+    @commands.hybrid_command(aliases=["b"])
+    async def burn(self, ctx: Context, card: Optional[Card] = LatestCard):
+        check_owns_card(card, ctx.author.id)
+        view = BurnView(ctx, card)
+        await ctx.reply("Burn?", view=view)
 
 
 async def setup(bot: Bot):
