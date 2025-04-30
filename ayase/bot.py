@@ -39,3 +39,7 @@ class Bot(commands.Bot):
 
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
+
+    @commands.after_invoke
+    async def close_session(self, ctx: Context):
+        ctx.session.close()
