@@ -43,4 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Run the application.
 # CMD [ "uv", "run", "ayase" ]
+
+RUN chmod +x entry.sh
+
 CMD [ "./entry.sh" ]
