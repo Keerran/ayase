@@ -49,6 +49,7 @@ class Character(Base):
     name: Mapped[str] = mapped_column(String())
     gender: Mapped[str] = mapped_column(String())
     anilist: Mapped[str] = mapped_column(Integer(), nullable=True, unique=True)
+    favourites: Mapped[int] = mapped_column(Integer())
     media_id: Mapped[int] = mapped_column(ForeignKey("medias.id"))
 
     media: Mapped[Media] = relationship()

@@ -30,6 +30,7 @@ query ($medias: [Int], $page: Int, $perPage: Int) {
                         large
                     }
                     gender
+                    favourites
                 }
             }
         }

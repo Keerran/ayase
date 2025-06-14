@@ -20,6 +20,7 @@ query ($page: Int, $perPage: Int) {
                 large
             }
             gender
+            favourites
             media(sort: POPULARITY_DESC) {
                 edges {
                     node {

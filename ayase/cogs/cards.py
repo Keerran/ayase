@@ -10,8 +10,16 @@ from ayase.views import PaginatedView, confirm_view
 from sqlalchemy import Engine, select, update
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.expression import func
+import random
 
 drops: dict[int, list[Edition]] = {}
+
+
+def choose_cards(session: Session, amount: int):
+    query = select(Edition.id, Character.favourites).join(Character)
+    ids, favs = zip(*session.execute(query))
+    favs = [1 / ((f + 1) ** 0.5) for f in favs]
+    return random.choices(ids, weights=favs, k=amount)
 
 
 class DropButton(discord.ui.Button):
@@ -126,7 +134,8 @@ class Cards(commands.Cog):
             return
         user.last_drop = datetime.now()
         ctx.session.commit()
-        query = select(Edition).options(joinedload(Edition.character)).order_by(func.random()).limit(3)
+        choices = choose_cards(ctx.session, 3)
+        query = select(Edition).options(joinedload(Edition.character)).where(Edition.id.in_(choices))
         chars = list(ctx.session.scalars(query))
         images = [Card(edition_id=char.id, edition=char).image for char in chars]
         choices = img_to_buf(ft.reduce(merge, images))

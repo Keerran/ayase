@@ -71,6 +71,7 @@ def create_character(medias: dict[int, Media], char: dict, node: dict) -> dict:
         "name": flatten_name(char["name"]).strip(),
         "gender": char["gender"] or "",
         "anilist": char["id"],
+        "favourites": char["favourites"],
         "media_id": medias[node["id"]].id,
         "aliases": aliases + spoiler_aliases
     }
@@ -186,7 +187,7 @@ def anilist_to_db(engine: Engine, characters: dict[str, Any]):
         aliases = {char["anilist"]: char.pop("aliases") for char in characters}
         existing = session.query(Character).filter(Character.anilist.in_([char["anilist"] for char in characters])).all()
         characters = existing + session.scalars(
-            upsert(Character, characters, ["anilist"], ["name", "gender"]).returning(Character)
+            upsert(Character, characters, ["anilist"], ["name", "gender", "favourites"]).returning(Character)
         ).all()
 
         for char in characters:
