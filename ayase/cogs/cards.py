@@ -1,6 +1,9 @@
 import discord
+import csv
+import io
 import functools as ft
 from typing import Optional
+from collections import Counter
 from datetime import datetime
 from discord.ext import commands
 from ayase.bot import Bot, Context
@@ -125,6 +128,25 @@ class Cards(commands.Cog):
             session.execute(update(User).values(last_drop=None, last_grab=None))
             session.commit()
         await ctx.send("🔃 Cooldowns reset!")
+
+    @commands.is_owner()
+    @commands.hybrid_command(aliases=["!sim"])
+    async def simulate(self, ctx: Context, amount: int):
+        choices = choose_cards(ctx.session, amount)
+        counts = Counter(choices)
+        query = select(Edition).options(joinedload(Edition.character)).where(Edition.id.in_(choices))
+        editions = ctx.session.scalars(query).all()
+        counts = [{
+            "name": e.character.name,
+            "favs": e.character.favourites,
+            "count": counts[e.id],
+        } for e in editions]
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=["name", "favs", "count"])
+        writer.writeheader()
+        writer.writerows(counts)
+        buf.seek(0)
+        await ctx.send(file=discord.File(buf, "sim.csv"))
 
     @commands.hybrid_command(aliases=["d"])
     async def drop(self, ctx: Context):
